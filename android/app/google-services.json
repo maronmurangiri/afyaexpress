@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "986160956195",
+    "project_id": "afyaexpress-8992e",
+    "storage_bucket": "afyaexpress-8992e.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:986160956195:android:6f247e0eb20bd24ea58296",
+        "android_client_info": {
+          "package_name": "com.expresske.afyaexpress"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAkigpM8HdEhtIBU3IB3belZCmotI0pl-I"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
