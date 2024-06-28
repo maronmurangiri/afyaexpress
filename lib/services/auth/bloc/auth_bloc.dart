@@ -155,5 +155,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         );
       }
     });
+    on<AuthEventNavigateToLogin>((event, emit) async {
+      emit(const AuthStateNavigateToLogin(isLoading: false));
+    });
   }
 }

@@ -37,3 +37,7 @@ class AuthEventForgotPassword extends AuthEvent {
 class AuthEventLogOut extends AuthEvent {
   const AuthEventLogOut();
 }
+
+class AuthEventNavigateToLogin extends AuthEvent {
+  const AuthEventNavigateToLogin();
+}

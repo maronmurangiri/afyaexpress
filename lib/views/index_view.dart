@@ -1,4 +1,7 @@
+import 'package:afyaexpress/services/auth/bloc/auth_event.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../services/auth/bloc/auth_bloc.dart';
 import 'login_view.dart'; // Import your LoginScreen file
 
 class IndexView extends StatelessWidget {
@@ -31,7 +34,7 @@ class IndexView extends StatelessWidget {
             // Image Section
             Expanded(
               child: Image.asset(
-                'images/doc.png', //We will Replace with your image path
+                'images/banner2.jpeg', //We will Replace with your image path
                 fit: BoxFit.cover, // Adjust the fit as needed
               ),
             ),
@@ -71,11 +74,17 @@ class IndexView extends StatelessWidget {
                     width: double.infinity, // Full width button
                     child: ElevatedButton(
                       onPressed: () {
-                        Navigator.push(
+                        /* Navigator.push(
                           context,
                           MaterialPageRoute(
-                              builder: (context) => const LoginView()),
-                        );
+                            //  builder: (context) => const LoginView()),
+                          
+                      
+                   );*/
+                        // Navigator.of(context).pushNamed('/login');
+                        context.read<AuthBloc>().add(
+                              const AuthEventNavigateToLogin(),
+                            );
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: primaryBlue, // Button background color

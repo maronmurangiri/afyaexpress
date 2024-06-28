@@ -83,7 +83,7 @@ class _ForgotPasswordViewState extends State<ForgotPasswordView> {
                 TextButton(
                   onPressed: () {
                     context.read<AuthBloc>().add(
-                          const AuthEventLogOut(),
+                          const AuthEventNavigateToLogin(),
                         );
                   },
                   child: const Text(

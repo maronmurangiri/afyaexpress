@@ -62,3 +62,16 @@ class AuthStateLoggedOut extends AuthState with EquatableMixin {
   @override
   List<Object?> get props => [exception, isLoading];
 }
+
+class AuthStateNavigateToLogin extends AuthState with EquatableMixin {
+  const AuthStateNavigateToLogin({
+    required bool isLoading,
+    String? loadingText,
+  }) : super(
+          isLoading: isLoading,
+          loadingText: loadingText,
+        );
+
+  @override
+  List<Object?> get props => [isLoading];
+}
