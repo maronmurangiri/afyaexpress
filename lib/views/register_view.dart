@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '/services/auth/auth_exceptions.dart';
 import '/services/auth/bloc/auth_bloc.dart';
 import '/services/auth/bloc/auth_event.dart';
 import '/services/auth/bloc/auth_state.dart';
 import '/utilities/dialogs/error_dialog.dart';
-//import 'package:email_validator/email_validator.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
 
 class RegisterView extends StatefulWidget {
@@ -16,35 +16,23 @@ class RegisterView extends StatefulWidget {
 }
 
 class _RegisterViewState extends State<RegisterView> {
-  final TextEditingController _name = TextEditingController();
-  final TextEditingController _email = TextEditingController();
-  final TextEditingController _phone = TextEditingController();
-  final TextEditingController _address = TextEditingController();
-  final TextEditingController _password = TextEditingController();
-  final TextEditingController _confirmPassword = TextEditingController();
-  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
-  bool _passwordVisible = false;
-
-  // Define your primary colors
-  static const Color primaryBlue = Color(0xFF1CD0D0);
-  static const Color primaryDark = Color(0xFF1C274C);
-  static const Color primaryDanger = Color(0xFFD93A3A);
-  static const Color primaryMuted = Color(0xFF878787);
+  late final TextEditingController _email;
+  late final TextEditingController _password;
+  late final TextEditingController _phone;
 
   @override
   void initState() {
-    _passwordVisible = false;
+    _email = TextEditingController();
+    _password = TextEditingController();
+    _phone = TextEditingController();
     super.initState();
   }
 
   @override
   void dispose() {
-    _name.dispose();
     _email.dispose();
-    _phone.dispose();
-    _address.dispose();
     _password.dispose();
-    _confirmPassword.dispose();
+    _phone.dispose();
     super.dispose();
   }
 
@@ -57,336 +45,148 @@ class _RegisterViewState extends State<RegisterView> {
       listener: (context, state) async {
         if (state is AuthStateRegistering) {
           if (state.exception is WeakPasswordAuthException) {
-            await showErrorDialog(context, 'The password is weak');
+            await showErrorDialog(
+              context,
+              'The password is weak',
+            );
           } else if (state.exception is EmailAlreadyInUseAuthException) {
-            await showErrorDialog(context, 'The email is already in use');
+            await showErrorDialog(
+              context,
+              'The email is already in use',
+            );
           } else if (state.exception is GenericAuthException) {
-            await showErrorDialog(context, 'An error occurred');
+            await showErrorDialog(
+              context,
+              'An error occurred',
+            );
           } else if (state.exception is InvalidEmailAuthException) {
-            await showErrorDialog(context, 'Invalid email');
+            await showErrorDialog(
+              context,
+              'Invalid email',
+            );
           }
         }
       },
-      child: GestureDetector(
-        onTap: () {
-          FocusScope.of(context).unfocus();
-        },
-        child: Scaffold(
-          appBar: AppBar(
-            title: const Text('Register',
-                style: TextStyle(
-                  color: primaryDanger,
-                  fontWeight: FontWeight.bold,
-                  //fontSize: 36,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Register'),
+        ),
+        body: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Enter your email and password'),
+                TextFormField(
+                  controller: _email,
+                  enableSuggestions: false,
+                  autocorrect: false,
+                  autofocus: true,
+                  keyboardType: TextInputType.emailAddress,
+                  decoration: InputDecoration(
+                    // hintText: 'Email',
+                    filled: true,
+                    fillColor:
+                        darkTheme ? Colors.black45 : Colors.grey.shade200,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(40),
+                      borderSide: BorderSide.none,
+                    ),
+                    labelText: 'Email',
+                    labelStyle: TextStyle(color: Color(0xFF1CD0D0)),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _password,
+                  obscureText: true,
+                  enableSuggestions: false,
+                  autocorrect: false,
+                  decoration: InputDecoration(
+                    //hintText: 'Password',
+                    filled: true,
+                    fillColor:
+                        darkTheme ? Colors.black45 : Colors.grey.shade200,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(40),
+                      borderSide: BorderSide.none,
+                    ),
+                    labelText: 'Password',
+                    labelStyle: TextStyle(color: Color(0xFF1CD0D0)),
+                  ),
+                ),
+                Center(
+                  child: Column(
+                    children: [
+                      TextButton(
+                        onPressed: () async {
+                          final email = _email.text;
+                          final password = _password.text;
+                          context.read<AuthBloc>().add(
+                                AuthEventRegister(
+                                  email,
+                                  password,
+                                ),
+                              );
+                        },
+                        child: const Text(
+                          'Register',
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                IntlPhoneField(
+                  controller: _phone,
+                  showCountryFlag: false,
+                  dropdownIcon: Icon(
+                    Icons.arrow_drop_down,
+                    color: darkTheme ? Colors.amber.shade400 : Colors.grey,
+                  ),
+                  decoration: InputDecoration(
+                    hintText: 'Phone Number',
+                    hintStyle: const TextStyle(
+                      color: Colors.grey,
+                    ),
+                    filled: true,
+                    fillColor:
+                        darkTheme ? Colors.black45 : Colors.grey.shade200,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(40),
+                      borderSide: const BorderSide(
+                        width: 0,
+                        style: BorderStyle.none,
+                      ),
+                    ),
+                  ),
+                  initialCountryCode: 'KE',
+                ),
+                Center(
+                    child: Column(
+                  children: [
+                    TextButton(
+                      onPressed: () {
+                        final phone = _phone.text;
+                      },
+                      child: const Text(
+                        'Send OTP',
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        context.read<AuthBloc>().add(
+                              const AuthEventLogOut(),
+                            );
+                      },
+                      child: const Text(
+                        'Account already registered',
+                      ),
+                    ),
+                  ],
                 )),
-            centerTitle: true,
-          ),
-          body: ListView(
-            padding: EdgeInsets.all(0),
-            children: [
-              Column(
-                children: [
-                  Container(
-                    width: double.infinity,
-                    height: 200, // Adjust the height as needed
-                    decoration: BoxDecoration(
-                      image: DecorationImage(
-                        image: AssetImage(darkTheme
-                            ? 'images/1.jpg'
-                            : 'images/onDemand.jpeg'),
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                  ),
-                  //SizedBox(height: 15),
-
-                  /*Text(
-                    'Register',
-                    style: TextStyle(
-                      color: darkTheme ? Colors.amber.shade400 : Colors.blue,
-                      fontSize: 25,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),*/
-                  Padding(
-                    padding: EdgeInsets.fromLTRB(15, 20, 15, 50),
-                    child: Form(
-                      key: _formKey,
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          TextFormField(
-                            controller: _name,
-                            decoration: InputDecoration(
-                              hintText: 'Name',
-                              hintStyle: TextStyle(
-                                color: Colors.grey,
-                              ),
-                              filled: true,
-                              fillColor: darkTheme
-                                  ? Colors.black45
-                                  : Colors.grey.shade200,
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(40),
-                                borderSide: BorderSide(
-                                  width: 0,
-                                  style: BorderStyle.none,
-                                ),
-                              ),
-                              prefixIcon: Icon(
-                                Icons.person,
-                                color: darkTheme
-                                    ? Colors.amber.shade400
-                                    : Colors.grey,
-                              ),
-                            ),
-                          ),
-                          SizedBox(height: 10),
-                          TextFormField(
-                            controller: _email,
-                            decoration: InputDecoration(
-                              hintText: 'Email',
-                              hintStyle: TextStyle(
-                                color: Colors.grey,
-                              ),
-                              filled: true,
-                              fillColor: darkTheme
-                                  ? Colors.black45
-                                  : Colors.grey.shade200,
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(40),
-                                borderSide: BorderSide(
-                                  width: 0,
-                                  style: BorderStyle.none,
-                                ),
-                              ),
-                              prefixIcon: Icon(
-                                Icons.email,
-                                color: darkTheme
-                                    ? Colors.amber.shade400
-                                    : Colors.grey,
-                              ),
-                            ),
-                          ),
-                          SizedBox(height: 10),
-                          IntlPhoneField(
-                            controller: _phone,
-                            showCountryFlag: false,
-                            dropdownIcon: Icon(
-                              Icons.arrow_drop_down,
-                              color: darkTheme
-                                  ? Colors.amber.shade400
-                                  : Colors.grey,
-                            ),
-                            decoration: InputDecoration(
-                              hintText: 'Phone Number',
-                              hintStyle: TextStyle(
-                                color: Colors.grey,
-                              ),
-                              filled: true,
-                              fillColor: darkTheme
-                                  ? Colors.black45
-                                  : Colors.grey.shade200,
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(40),
-                                borderSide: BorderSide(
-                                  width: 0,
-                                  style: BorderStyle.none,
-                                ),
-                              ),
-                            ),
-                            initialCountryCode: 'KE',
-                          ),
-                          SizedBox(height: 10),
-                          TextFormField(
-                            controller: _address,
-                            decoration: InputDecoration(
-                              hintText: 'Address',
-                              hintStyle: TextStyle(
-                                color: Colors.grey,
-                              ),
-                              filled: true,
-                              fillColor: darkTheme
-                                  ? Colors.black45
-                                  : Colors.grey.shade200,
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(40),
-                                borderSide: BorderSide(
-                                  width: 0,
-                                  style: BorderStyle.none,
-                                ),
-                              ),
-                              prefixIcon: Icon(
-                                Icons.home,
-                                color: darkTheme
-                                    ? Colors.amber.shade400
-                                    : Colors.grey,
-                              ),
-                            ),
-                          ),
-                          SizedBox(height: 20),
-                          TextFormField(
-                            controller: _password,
-                            obscureText: !_passwordVisible,
-                            decoration: InputDecoration(
-                              hintText: 'Password',
-                              hintStyle: TextStyle(
-                                color: Colors.grey,
-                              ),
-                              filled: true,
-                              fillColor: darkTheme
-                                  ? Colors.black45
-                                  : Colors.grey.shade200,
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(40),
-                                borderSide: BorderSide(
-                                  width: 0,
-                                  style: BorderStyle.none,
-                                ),
-                              ),
-                              prefixIcon: Icon(
-                                Icons.lock,
-                                color: darkTheme
-                                    ? Colors.amber.shade400
-                                    : Colors.grey,
-                              ),
-                              suffixIcon: IconButton(
-                                icon: Icon(
-                                  _passwordVisible
-                                      ? Icons.visibility
-                                      : Icons.visibility_off,
-                                  color: darkTheme
-                                      ? Colors.amber.shade400
-                                      : Colors.grey,
-                                ),
-                                onPressed: () {
-                                  setState(() {
-                                    _passwordVisible = !_passwordVisible;
-                                  });
-                                },
-                              ),
-                            ),
-                          ),
-                          SizedBox(height: 10),
-                          TextFormField(
-                            controller: _confirmPassword,
-                            obscureText: !_passwordVisible,
-                            decoration: InputDecoration(
-                              hintText: 'Confirm Password',
-                              hintStyle: TextStyle(
-                                color: Colors.grey,
-                              ),
-                              filled: true,
-                              fillColor: darkTheme
-                                  ? Colors.black45
-                                  : Colors.grey.shade200,
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(40),
-                                borderSide: BorderSide(
-                                  width: 0,
-                                  style: BorderStyle.none,
-                                ),
-                              ),
-                              prefixIcon: Icon(
-                                Icons.lock,
-                                color: darkTheme
-                                    ? Colors.amber.shade400
-                                    : Colors.grey,
-                              ),
-                              suffixIcon: IconButton(
-                                icon: Icon(
-                                  _passwordVisible
-                                      ? Icons.visibility
-                                      : Icons.visibility_off,
-                                  color: darkTheme
-                                      ? Colors.amber.shade400
-                                      : Colors.grey,
-                                ),
-                                onPressed: () {
-                                  setState(() {
-                                    _passwordVisible = !_passwordVisible;
-                                  });
-                                },
-                              ),
-                            ),
-                          ),
-                          SizedBox(height: 20),
-                          SizedBox(
-                            width: double.infinity,
-                            child: MaterialButton(
-                              onPressed: () async {
-                                if (_formKey.currentState!.validate()) {
-                                  final email = _email.text;
-                                  final password = _password.text;
-                                  final name = _name.text;
-                                  final phone = _phone.text;
-                                  final address = _address.text;
-
-                                  context.read<AuthBloc>().add(
-                                        AuthEventRegister(
-                                          email,
-                                          password,
-                                          //name,
-                                          //phone,
-                                          //address,
-                                        ),
-                                      );
-                                }
-                              },
-                              color: darkTheme
-                                  ? Colors.amber.shade400
-                                  : Colors.blue,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(40),
-                              ),
-                              child: Padding(
-                                padding: EdgeInsets.symmetric(vertical: 16),
-                                child: Text(
-                                  'Register',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                          SizedBox(height: 20),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                'Already have an account?',
-                                style: TextStyle(
-                                  color: darkTheme ? Colors.grey : Colors.black,
-                                ),
-                              ),
-                              TextButton(
-                                onPressed: () {
-                                  context.read<AuthBloc>().add(
-                                        const AuthEventNavigateToLogin(),
-                                      );
-                                },
-                                child: Text(
-                                  'Login',
-                                  style: TextStyle(
-                                    color: darkTheme
-                                        ? Colors.amber.shade400
-                                        : Colors.blue,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
