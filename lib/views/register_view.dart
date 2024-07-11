@@ -19,6 +19,7 @@ class _RegisterViewState extends State<RegisterView> {
   late final TextEditingController _email;
   late final TextEditingController _password;
   late final TextEditingController _phone;
+  String? _selectedRole;
 
   @override
   void initState() {
@@ -64,6 +65,9 @@ class _RegisterViewState extends State<RegisterView> {
               context,
               'Invalid email',
             );
+          } else if (state is AuthStateCodeSent) {
+            // Navigate to OTP view upon successful OTP sending
+            Navigator.of(context).pushNamed('/otp');
           }
         }
       },
@@ -77,6 +81,30 @@ class _RegisterViewState extends State<RegisterView> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                DropdownButton<String>(
+                  hint: Text('Select Role'),
+                  value: _selectedRole,
+                  onChanged: (String? newValue) {
+                    setState(() {
+                      _selectedRole = newValue!;
+                    });
+                  },
+                  items: <String>['Patient', 'Medic']
+                      .map<DropdownMenuItem<String>>((String value) {
+                    return DropdownMenuItem<String>(
+                      value: value,
+                      child: Text(value),
+                    );
+                  }).toList(),
+                ),
+                SizedBox(height: 20),
+                Text(
+                  _selectedRole != null
+                      ? 'Selected: $_selectedRole'
+                      : 'No role selected',
+                  style: TextStyle(fontSize: 18),
+                ),
+                SizedBox(height: 20),
                 const Text('Enter your email and password'),
                 TextFormField(
                   controller: _email,
@@ -123,10 +151,12 @@ class _RegisterViewState extends State<RegisterView> {
                         onPressed: () async {
                           final email = _email.text;
                           final password = _password.text;
+                          final role = _selectedRole;
                           context.read<AuthBloc>().add(
                                 AuthEventRegister(
                                   email,
                                   password,
+                                  role!,
                                 ),
                               );
                         },
@@ -167,10 +197,24 @@ class _RegisterViewState extends State<RegisterView> {
                   children: [
                     TextButton(
                       onPressed: () {
-                        final phone = _phone.text;
+                        //'+254' + phoneNumber.substring(1)
+                        final phone = '+254${_phone.text.substring(1)}';
+                        //const phone = '0700606978';
+                        context.read<AuthBloc>().add(AuthEventVerifyPhoneNumber(
+                            phoneNumber: phone, context: context));
                       },
                       child: const Text(
                         'Send OTP',
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        context.read<AuthBloc>().add(
+                              AuthEventSignInWithGoogle(),
+                            );
+                      },
+                      child: const Text(
+                        'Sign in with google',
                       ),
                     ),
                     TextButton(

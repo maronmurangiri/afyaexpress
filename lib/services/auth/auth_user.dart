@@ -5,10 +5,12 @@ import 'package:flutter/foundation.dart';
 class AuthUser {
   final String id;
   final String email;
+  final String role;
   final bool isEmailVerified;
   const AuthUser({
     required this.id,
     required this.email,
+    required this.role,
     required this.isEmailVerified,
   });
 
@@ -16,5 +18,6 @@ class AuthUser {
         id: user.uid,
         email: user.email!,
         isEmailVerified: user.emailVerified,
+        role: '',
       );
 }

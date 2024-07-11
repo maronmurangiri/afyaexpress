@@ -1,10 +1,14 @@
-import 'package:bloc/bloc.dart';
-import '/services/auth/auth_provider.dart';
-import '/services/auth/bloc/auth_event.dart';
-import '/services/auth/bloc/auth_state.dart';
+import 'package:afyaexpress/views/otp_view.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+
+import 'package:afyaexpress/services/auth/auth_provider.dart' as auth;
+import 'package:afyaexpress/services/auth/bloc/auth_event.dart';
+import 'package:afyaexpress/services/auth/bloc/auth_state.dart';
 
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
-  AuthBloc(AuthProvider provider)
+  AuthBloc(auth.AuthProvider provider)
       : super(const AuthStateUninitialized(isLoading: true)) {
     on<AuthEventShouldRegister>((event, emit) {
       emit(const AuthStateRegistering(
@@ -56,8 +60,10 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<AuthEventRegister>((event, emit) async {
       final email = event.email;
       final password = event.password;
+      final role = event.role;
       try {
         await provider.createUser(
+          role: role,
           email: email,
           password: password,
         );
@@ -74,6 +80,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<AuthEventInitialize>((event, emit) async {
       await provider.initialize();
       final user = provider.currentUser;
+      final role = user?.role;
       if (user == null) {
         emit(
           const AuthStateLoggedOut(
@@ -83,12 +90,37 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         );
       } else if (!user.isEmailVerified) {
         emit(const AuthStateNeedsVerification(isLoading: false));
+      } else if (role == 'Patient') {
+        emit(
+          AuthStateLoggedInAsPatient(user: user, isLoading: false),
+        );
+      } else if (role == 'Medic') {
+        emit(
+          AuthStateLoggedInAsMedic(user: user, isLoading: false),
+        );
       } else {
-        emit(AuthStateLoggedIn(
+        emit(
+          const AuthStateLoggedOut(
+            exception: null,
+            isLoading: false,
+          ),
+        );
+
+        if (role == 'Patient') {
+          emit(
+            AuthStateLoggedInAsPatient(user: user, isLoading: false),
+          );
+        } else if (role == 'Medic') {
+          emit(
+            AuthStateLoggedInAsMedic(user: user, isLoading: false),
+          );
+        }
+      }
+
+      /*emit(AuthStateLoggedIn(
           user: user,
           isLoading: false,
-        ));
-      }
+        ));*/
     });
     // log in
     on<AuthEventLogIn>((event, emit) async {
@@ -107,6 +139,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
           password: password,
         );
 
+        final role = user.role;
+
         if (!user.isEmailVerified) {
           emit(
             const AuthStateLoggedOut(
@@ -115,8 +149,35 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
             ),
           );
           emit(const AuthStateNeedsVerification(isLoading: false));
+        } else if (role == 'Patient') {
+          emit(
+            AuthStateLoggedInAsPatient(user: user, isLoading: false),
+          );
+        } else if (role == 'Medic') {
+          emit(
+            AuthStateLoggedInAsMedic(user: user, isLoading: false),
+          );
         } else {
           emit(
+            const AuthStateLoggedOut(
+              exception: null,
+              isLoading: false,
+            ),
+          );
+
+          if (role == 'Patient') {
+            emit(
+              AuthStateLoggedInAsPatient(user: user, isLoading: false),
+            );
+          } else if (role == 'Medic') {
+            emit(
+              AuthStateLoggedInAsMedic(user: user, isLoading: false),
+            );
+          }
+        }
+
+        //else {
+        /*emit(
             const AuthStateLoggedOut(
               exception: null,
               isLoading: false,
@@ -125,8 +186,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
           emit(AuthStateLoggedIn(
             user: user,
             isLoading: false,
-          ));
-        }
+          ));*/
       } on Exception catch (e) {
         emit(
           AuthStateLoggedOut(
@@ -155,8 +215,96 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         );
       }
     });
+
+    //navigate to login
     on<AuthEventNavigateToLogin>((event, emit) async {
       emit(const AuthStateNavigateToLogin(isLoading: false));
+    });
+
+    // verify phone number
+    on<AuthEventVerifyPhoneNumber>((event, emit) async {
+      emit(const AuthStateLoading(isLoading: true));
+
+      try {
+        await provider.verifyPhoneNumber(
+          phoneNumber: event.phoneNumber,
+          verificationCompleted: (PhoneAuthCredential credential) async {
+            final user = await provider.signInWithPhoneCredential(credential);
+            emit(AuthStateLoggedInAsPatient(user: user, isLoading: false));
+          },
+          verificationFailed: (FirebaseAuthException e) {
+            emit(AuthStateError(exception: e, isLoading: false));
+          },
+          codeSent: (String verificationId, int? resendToken) {
+            /*verificationId = verificationId;
+            emit(AuthStateCodeSent(
+                verificationId: verificationId, isLoading: false));*/
+            Navigator.push(
+              event.context,
+              MaterialPageRoute(
+                  builder: (context) =>
+                      OTPView(verificationId: verificationId)),
+            );
+          },
+          codeAutoRetrievalTimeout: (String verificationId) {
+            emit(AuthStateCodeAutoRetrievalTimeout(
+                verificationId: verificationId, isLoading: false));
+          },
+        );
+      } catch (e) {
+        if (e is Exception) {
+          emit(AuthStateError(exception: e, isLoading: false));
+        } else {
+          // Handle other cases or rethrow if necessary
+          throw e;
+        }
+      }
+    });
+
+    // sign in with phone credential
+    on<AuthEventSignInWithPhoneCredential>((event, emit) async {
+      try {
+        final user = await provider.signInWithPhoneCredential(event.credential);
+        emit(AuthStateLoggedInAsPatient(user: user, isLoading: false));
+      } on Exception catch (e) {
+        emit(AuthStateError(exception: e, isLoading: false));
+      }
+    });
+
+    // submit OTP
+    on<AuthEventSubmitOTP>((event, emit) async {
+      emit(const AuthStateLoading(isLoading: true));
+      try {
+        final credential = PhoneAuthProvider.credential(
+          verificationId: event.verificationId,
+          smsCode: event.smsCode,
+        );
+        final user = await provider.signInWithPhoneCredential(credential);
+        emit(AuthStateLoggedInAsPatient(user: user, isLoading: false));
+      } on Exception catch (e) {
+        emit(AuthStateError(exception: e, isLoading: false));
+      }
+    });
+
+    //google sign in
+    on<AuthEventSignInWithGoogle>((event, emit) async {
+      emit(const AuthStateGoogleSignIn(isLoading: true));
+      try {
+        final user = await provider.signInWithGoogle();
+        emit(AuthStateLoggedInAsPatient(user: user, isLoading: false));
+      } on Exception catch (e) {
+        emit(AuthStateError(exception: e, isLoading: false));
+      }
+    });
+
+    //view doctor profile
+    on<AuthEventViewDoctorProfile>((event, emit) async {
+      emit(const AuthStateViewDoctorProfile(isLoading: false));
+    });
+
+    //view patient profile
+    on<AuthEventViewPatientProfile>((event, emit) async {
+      emit(const AuthStateViewPatientProfile(isLoading: false));
     });
   }
 }

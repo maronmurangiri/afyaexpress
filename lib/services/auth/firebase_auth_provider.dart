@@ -1,11 +1,18 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import '/firebase_options.dart';
 import '/services/auth/auth_user.dart';
 import '/services/auth/auth_provider.dart';
 import '/services/auth/auth_exceptions.dart';
 
 import 'package:firebase_auth/firebase_auth.dart'
-    show FirebaseAuth, FirebaseAuthException;
+    show
+        FirebaseAuth,
+        FirebaseAuthException,
+        GoogleAuthProvider,
+        PhoneAuthCredential,
+        UserCredential;
 
 class FirebaseAuthProvider implements AuthProvider {
   @override
@@ -17,6 +24,7 @@ class FirebaseAuthProvider implements AuthProvider {
 
   @override
   Future<AuthUser> createUser({
+    required String role,
     required String email,
     required String password,
   }) async {
@@ -27,6 +35,10 @@ class FirebaseAuthProvider implements AuthProvider {
       );
       final user = currentUser;
       if (user != null) {
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.id)
+            .set({'email': email, 'role': role, 'user_id': user.id});
         return user;
       } else {
         throw UserNotLoggedInAuthException();
@@ -68,7 +80,22 @@ class FirebaseAuthProvider implements AuthProvider {
       );
       final user = currentUser;
       if (user != null) {
-        return user;
+        final userDoc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.id)
+            .get();
+
+        if (userDoc.exists) {
+          final role = userDoc.data()?['role'] ?? '';
+
+          return AuthUser(
+              id: user.id,
+              email: user.email,
+              role: role,
+              isEmailVerified: user.isEmailVerified);
+        } else {
+          throw UserNotFoundInFirestoreException();
+        }
       } else {
         throw UserNotLoggedInAuthException();
       }
@@ -120,6 +147,72 @@ class FirebaseAuthProvider implements AuthProvider {
       }
     } catch (_) {
       throw GenericAuthException();
+    }
+  }
+
+  @override
+  Future<void> verifyPhoneNumber({
+    required String phoneNumber,
+    required Function(PhoneAuthCredential) verificationCompleted,
+    required Function(FirebaseAuthException) verificationFailed,
+    required Function(String, int?) codeSent,
+    required Function(String) codeAutoRetrievalTimeout,
+  }) async {
+    try {
+      await FirebaseAuth.instance.verifyPhoneNumber(
+        phoneNumber: phoneNumber,
+        verificationCompleted: verificationCompleted,
+        verificationFailed: verificationFailed,
+        codeSent: codeSent,
+        codeAutoRetrievalTimeout: codeAutoRetrievalTimeout,
+      );
+    } on FirebaseAuthException catch (e) {
+      throw GenericAuthException();
+    }
+  }
+
+  @override
+  Future<AuthUser> signInWithPhoneCredential(
+      PhoneAuthCredential credential) async {
+    try {
+      final userCredential =
+          await FirebaseAuth.instance.signInWithCredential(credential);
+      final user = userCredential.user;
+      if (user != null) {
+        return AuthUser.fromFirebase(user);
+      } else {
+        throw UserNotLoggedInAuthException();
+      }
+    } on FirebaseAuthException catch (e) {
+      throw GenericAuthException();
+    }
+  }
+
+  Future<AuthUser> signInWithGoogle() async {
+    // Trigger the authentication flow
+    final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
+    if (googleUser == null) {
+      throw UserCancelledAuthException();
+    }
+
+    // Obtain the auth details from the request
+    final GoogleSignInAuthentication? googleAuth =
+        await googleUser.authentication;
+
+    // Create a new credential
+    final credential = GoogleAuthProvider.credential(
+      accessToken: googleAuth?.accessToken,
+      idToken: googleAuth?.idToken,
+    );
+
+    // Once signed in, return the UserCredential
+    final userCredential =
+        await FirebaseAuth.instance.signInWithCredential(credential);
+    final user = userCredential.user;
+    if (user != null) {
+      return AuthUser.fromFirebase(user);
+    } else {
+      throw UserNotLoggedInAuthException();
     }
   }
 }

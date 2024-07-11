@@ -5,9 +5,9 @@ import '/services/auth/bloc/auth_event.dart';
 import '/utilities/dialogs/logout_dialog.dart';
 import 'package:flutter_bloc/flutter_bloc.dart' show ReadContext;
 
-extension Count<T extends Iterable> on Stream<T> {
-  Stream<int> get getLength => map((event) => event.length);
-}
+//extension Count<T extends Iterable> on Stream<T> {
+// Stream<int> get getLength => map((event) => event.length);
+//}
 
 class NotesView extends StatefulWidget {
   const NotesView({Key? key}) : super(key: key);
@@ -27,12 +27,12 @@ class _NotesViewState extends State<NotesView> {
     return Scaffold(
       appBar: AppBar(
         actions: [
-          IconButton(
+          /*IconButton(
             onPressed: () {
               //Navigator.of(context).pushNamed(createRoute);
             },
-            icon: const Icon(Icons.add),
-          ),
+            //icon: const Icon(Icons.add),
+          ),*/
           PopupMenuButton<MenuAction>(
             onSelected: (value) async {
               switch (value) {

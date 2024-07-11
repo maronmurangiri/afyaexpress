@@ -1,5 +1,18 @@
+import 'package:afyaexpress/screens/appointment.dart';
+import 'package:afyaexpress/screens/home.dart';
+import 'package:afyaexpress/screens/index.dart';
+import 'package:afyaexpress/screens/login.dart';
+import 'package:afyaexpress/screens/register.dart';
+import 'package:afyaexpress/screens/reset_password.dart';
+import 'package:afyaexpress/services/storage/profile/patient_profile.dart';
+import 'package:afyaexpress/views/home/doctor_view.dart';
+import 'package:afyaexpress/views/home/patient_view.dart';
+import 'package:afyaexpress/views/home/profile/doctor_profile_view.dart';
+import 'package:afyaexpress/views/home/profile/patient_profile_view.dart';
+import 'package:afyaexpress/views/otp_view.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:path/path.dart';
 import '/helpers/loading/loading_screen.dart';
 import 'services/auth/bloc/auth_bloc.dart';
 import 'services/auth/bloc/auth_event.dart';
@@ -20,25 +33,27 @@ void main() {
       // supportedLocales: AppLocalizations.supportedLocales,
       //localizationsDelegates: AppLocalizations.localizationsDelegates,
       title: 'Afya Express',
+      themeMode: ThemeMode.system,
+      theme: ThemeData.light(),
+      darkTheme: ThemeData.dark(),
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
       home: BlocProvider<AuthBloc>(
         create: (context) => AuthBloc(FirebaseAuthProvider()),
-        child: const HomePage(),
+        child: const Homepage(),
       ),
       routes: {
         //createOrUpdateNoteRoute: (context) => const CreateUpdateNoteView(),
         '/login': (context) => const LoginView(),
         '/index': (context) => const IndexView(),
+        '/appointment': (context) => const Appointment()
+        // '/otp': (context) => const OTPView(verificationId: '',),
       },
     ),
   );
 }
 
-class HomePage extends StatelessWidget {
-  const HomePage({Key? key}) : super(key: key);
+class Homepage extends StatelessWidget {
+  const Homepage({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -55,19 +70,29 @@ class HomePage extends StatelessWidget {
         }
       },
       builder: (context, state) {
-        if (state is AuthStateLoggedIn) {
-          return const NotesView();
+        if (state is AuthStateLoggedInAsMedic) {
+          return const HomePage();
+        } else if (state is AuthStateLoggedInAsPatient) {
+          return const HomePage();
         } else if (state is AuthStateNeedsVerification) {
           return const VerifyEmailView();
         } else if (state is AuthStateLoggedOut) {
-          return const IndexView();
+          return IndexPage();
         } else if (state is AuthStateForgotPassword) {
-          return const ForgotPasswordView();
+          return const ForgotPaasword();
         } else if (state is AuthStateRegistering) {
-          return const RegisterView();
+          return const Register();
         } else if (state is AuthStateNavigateToLogin) {
-          return const LoginView();
-        } else {
+          return const LoginScreen();
+        } else if (state is AuthStateViewDoctorProfile) {
+          return const DoctorProfileView();
+        } else if (state is AuthStateViewPatientProfile) {
+          return const PatientProfileView();
+        }
+        //else if (State is AuthStateCodeSent) {
+        // return const OTPView();
+        //  }
+        else {
           return const Scaffold(
             body: CircularProgressIndicator(),
           );
