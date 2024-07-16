@@ -1,8 +1,13 @@
+import 'package:afyaexpress/enums/menu_actions.dart';
 import 'package:afyaexpress/screens/doctors_appointment_card.dart';
 import 'package:afyaexpress/services/auth/auth_service.dart';
+import 'package:afyaexpress/services/auth/bloc/auth_bloc.dart';
+import 'package:afyaexpress/services/auth/bloc/auth_event.dart';
 import 'package:afyaexpress/services/storage/profile/Firebase_doctor_profile.dart';
 import 'package:afyaexpress/services/storage/profile/doctor_profile.dart';
+import 'package:afyaexpress/utilities/dialogs/logout_dialog.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'index.dart'; // Assuming this contains your primary color definitions
 import 'package:afyaexpress/screens/appointment.dart';
@@ -85,39 +90,74 @@ class _DoctorHomeState extends State<DoctorHome> {
   }
 
   void _onNoteTakingPressed() {
-    // Implement note-taking functionality here
-    // This method should handle popping up a dialog to take notes
+    bool showPrescriptionOptions =
+        false; // Flag to show/hide prescription options
+
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Take Notes'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              TextField(
-                decoration: InputDecoration(
-                  hintText: 'Enter your notes here...',
-                ),
-                maxLines: 3,
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: Text('Take Notes'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  TextField(
+                    decoration: InputDecoration(
+                      hintText: 'Enter your notes here...',
+                    ),
+                    maxLines: 3,
+                  ),
+                  SizedBox(height: 10),
+                  if (showPrescriptionOptions) ...[
+                    Column(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: <Widget>[
+                        FloatingActionButton.extended(
+                          onPressed: _onAddLabReportPressed,
+                          label: Text('Lab Report'),
+                          icon: Icon(Icons.description),
+                          backgroundColor: Colors.blue,
+                        ),
+                        Config.spaceSmall,
+                        FloatingActionButton.extended(
+                          onPressed: _onAddPrescriptionPressed,
+                          label: Text('Drug Prescription'),
+                          icon: Icon(Icons.local_hospital),
+                          backgroundColor: Colors.green,
+                        ),
+                      ],
+                    ),
+                  ] else ...[
+                    ElevatedButton(
+                      onPressed: () {
+                        setState(() {
+                          showPrescriptionOptions = true;
+                        });
+                      },
+                      child: Text('Prescriptions'),
+                    ),
+                  ],
+                ],
               ),
-            ],
-          ),
-          actions: <Widget>[
-            TextButton(
-              child: Text('Save'),
-              onPressed: () {
-                // Implement saving notes functionality
-                Navigator.of(context).pop();
-              },
-            ),
-            TextButton(
-              child: Text('Cancel'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
+              actions: <Widget>[
+                TextButton(
+                  child: Text('Save'),
+                  onPressed: () {
+                    // Implement saving notes functionality
+                    Navigator.of(context).pop();
+                  },
+                ),
+                TextButton(
+                  child: Text('Cancel'),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                ),
+              ],
+            );
+          },
         );
       },
     );
@@ -141,6 +181,18 @@ class _DoctorHomeState extends State<DoctorHome> {
         isLoading = false;
       });
     }
+  }
+
+  void _onAddLabReportPressed() {
+    // Implement functionality to add lab report
+    print('Add Lab Report pressed');
+    // Example: Show a dialog to input lab report details
+  }
+
+  void _onAddPrescriptionPressed() {
+    // Implement functionality to add prescription
+    print('Add Prescription pressed');
+    // Example: Show a dialog to input prescription details
   }
 
   @override
@@ -249,6 +301,27 @@ class _DoctorHomeState extends State<DoctorHome> {
             icon: Icon(Icons.search),
             onPressed: _onSearchPressed,
           ),
+          PopupMenuButton<MenuAction>(
+            onSelected: (value) async {
+              switch (value) {
+                case MenuAction.logout:
+                  final shouldLogout = await showLogOutDialog(context);
+                  if (shouldLogout) {
+                    context.read<AuthBloc>().add(
+                          const AuthEventLogOut(),
+                        );
+                  }
+              }
+            },
+            itemBuilder: (context) {
+              return [
+                const PopupMenuItem<MenuAction>(
+                  value: MenuAction.logout,
+                  child: Text('Log out'),
+                ),
+              ];
+            },
+          )
         ],
       ),
       body: Padding(
@@ -335,16 +408,16 @@ class _DoctorHomeState extends State<DoctorHome> {
             label: 'Home',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.calendar_today),
+            icon: Icon(Icons.add),
             label: 'Appointments',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Profile',
+            icon: Icon(Icons.calendar_today),
+            label: 'Calendar',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.add),
-            label: 'Capture Vitals',
+            icon: Icon(Icons.person_2),
+            label: 'profile',
           ),
         ],
         currentIndex: _selectedIndex,

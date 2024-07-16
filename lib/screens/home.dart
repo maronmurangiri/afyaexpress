@@ -1,3 +1,4 @@
+import 'package:afyaexpress/enums/menu_actions.dart';
 import 'package:afyaexpress/global/global.dart';
 import 'package:afyaexpress/screens/appointment.dart';
 import 'package:afyaexpress/screens/appointment_card.dart';
@@ -5,10 +6,14 @@ import 'package:afyaexpress/screens/doctor.dart';
 import 'package:afyaexpress/screens/profiles/user_profile.dart';
 import 'package:afyaexpress/screens/vitals_capture.dart';
 import 'package:afyaexpress/services/auth/auth_service.dart';
+import 'package:afyaexpress/services/auth/bloc/auth_bloc.dart';
+import 'package:afyaexpress/services/auth/bloc/auth_event.dart';
 import 'package:afyaexpress/services/storage/profile/Firebase_patient_profile.dart';
 import 'package:afyaexpress/services/storage/profile/patient_profile_constants.dart';
+import 'package:afyaexpress/utilities/dialogs/logout_dialog.dart';
 import 'package:afyaexpress/utils/config.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'index.dart';
 
@@ -104,6 +109,35 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('AfyaExpress'),
+        actions: [
+          /*IconButton(
+            onPressed: () {
+              //Navigator.of(context).pushNamed(createRoute);
+            },
+            //icon: const Icon(Icons.add),
+          ),*/
+          PopupMenuButton<MenuAction>(
+            onSelected: (value) async {
+              switch (value) {
+                case MenuAction.logout:
+                  final shouldLogout = await showLogOutDialog(context);
+                  if (shouldLogout) {
+                    context.read<AuthBloc>().add(
+                          const AuthEventLogOut(),
+                        );
+                  }
+              }
+            },
+            itemBuilder: (context) {
+              return [
+                const PopupMenuItem<MenuAction>(
+                  value: MenuAction.logout,
+                  child: Text('Log out'),
+                ),
+              ];
+            },
+          )
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.symmetric(
@@ -120,7 +154,7 @@ class _HomePageState extends State<HomePage> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: <Widget>[
                     Text(
-                      currentProfile?['first_name'] ?? 'User',
+                      'Hi ' + currentProfile?['first_name'] ?? 'User',
                       style: const TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
@@ -223,16 +257,16 @@ class _HomePageState extends State<HomePage> {
             label: 'Home',
           ),
           BottomNavigationBarItem(
+            icon: Icon(Icons.add),
+            label: 'Capture Vitals',
+          ),
+          BottomNavigationBarItem(
             icon: Icon(Icons.calendar_today),
             label: 'Appointments',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.person),
             label: 'Profile',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.add),
-            label: 'Capture Vitals',
           ),
         ],
         currentIndex: _selectedIndex,
