@@ -1,3 +1,4 @@
+import 'package:afyaexpress/screens/index.dart';
 import 'package:flutter/material.dart';
 //import '/extensions/buildcontext/loc.dart';
 import '/services/auth/bloc/auth_bloc.dart';
@@ -15,7 +16,9 @@ class _VerifyEmailViewState extends State<VerifyEmailView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: IndexPage.primaryBlue,
       appBar: AppBar(
+        backgroundColor: IndexPage.primaryBlue,
         title: const Text('Verify email'),
       ),
       body: SingleChildScrollView(

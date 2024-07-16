@@ -1,4 +1,4 @@
-import 'package:afyaexpress/enums/menu_actions.dart';
+/*import 'package:afyaexpress/enums/menu_actions.dart';
 import 'package:afyaexpress/services/auth/auth_service.dart';
 import 'package:afyaexpress/services/auth/bloc/auth_bloc.dart';
 import 'package:afyaexpress/services/auth/bloc/auth_event.dart';
@@ -64,13 +64,12 @@ class _PatientProfileViewState extends State<PatientProfileView> {
     if (existingProfile != null) {
       setState(() {
         _patientProfile = existingProfile;
-        _medicalHistoryController.text =
-            existingProfile.medicalHistory.join(', ');
-        _allergiesController.text = existingProfile.allergies.join(', ');
+        _medicalHistoryController.text = existingProfile.medicalHistory!;
+        _allergiesController.text = existingProfile.allergies!.join(', ');
         _phoneNumberController.text = existingProfile.phoneNumber;
         _ageController.text = existingProfile.age.toString();
         _addressController.text = existingProfile.address;
-        _namesController.text = existingProfile.names;
+        _namesController.text = existingProfile.firstName;
         _currentMedicationsController.text =
             existingProfile.currentMedications.join(', ');
         _genderController.text = existingProfile.gender;
@@ -80,12 +79,12 @@ class _PatientProfileViewState extends State<PatientProfileView> {
           await _patientService.createNewPatientProfile(userId: userId);
       setState(() {
         _patientProfile = newProfile;
-        _medicalHistoryController.text = newProfile.medicalHistory.join(', ');
-        _allergiesController.text = newProfile.allergies.join(', ');
+        _medicalHistoryController.text = newProfile.medicalHistory!;
+        _allergiesController.text = newProfile.allergies!.join(', ');
         _phoneNumberController.text = newProfile.phoneNumber;
         _ageController.text = newProfile.age.toString();
         _addressController.text = newProfile.address;
-        _namesController.text = newProfile.names;
+        _namesController.text = newProfile.firstName;
         _currentMedicationsController.text =
             newProfile.currentMedications.join(', ');
         _genderController.text = newProfile.gender;
@@ -99,7 +98,7 @@ class _PatientProfileViewState extends State<PatientProfileView> {
     final medicalHistory = _medicalHistoryController.text.split(',').toList();
     await _patientService.updatePatientProfile(
       documentId: patientProfile.documentId,
-      medicalHistory: medicalHistory,
+      //medicalHistory: medicalHistory,
     );
   }
 
@@ -151,7 +150,7 @@ class _PatientProfileViewState extends State<PatientProfileView> {
     final names = _namesController.text;
     await _patientService.updatePatientProfile(
       documentId: patientProfile.documentId,
-      names: names,
+      firstName: names,
     );
   }
 
@@ -309,3 +308,4 @@ class _PatientProfileViewState extends State<PatientProfileView> {
     );
   }
 }
+*/

@@ -1,8 +1,12 @@
+import 'package:afyaexpress/global/global.dart';
 import 'package:afyaexpress/screens/appointment.dart';
 import 'package:afyaexpress/screens/appointment_card.dart';
 import 'package:afyaexpress/screens/doctor.dart';
 import 'package:afyaexpress/screens/profiles/user_profile.dart';
 import 'package:afyaexpress/screens/vitals_capture.dart';
+import 'package:afyaexpress/services/auth/auth_service.dart';
+import 'package:afyaexpress/services/storage/profile/Firebase_patient_profile.dart';
+import 'package:afyaexpress/services/storage/profile/patient_profile_constants.dart';
 import 'package:afyaexpress/utils/config.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -16,6 +20,27 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  late final currentUser; // = AuthService.firebase().currentUser!
+  late FirebasePatientProfile currentPatient; // = FirebasePatientProfile();
+  Map<String, dynamic>? currentProfile;
+  bool isLoading = true;
+  @override
+  void initState() {
+    super.initState();
+    _initializeUser();
+  }
+
+  Future<void> _initializeUser() async {
+    currentUser = AuthService.firebase().currentUser!;
+    currentPatient = FirebasePatientProfile();
+    currentProfile = (await currentPatient.getPatientById(currentUser.id))
+        as Map<String, dynamic>?;
+    print(currentProfile);
+    setState(() {
+      isLoading = false;
+    });
+  }
+
   final List<Map<String, dynamic>> medCat = const [
     {
       "icon": FontAwesomeIcons.userDoctor,
@@ -94,9 +119,9 @@ class _HomePageState extends State<HomePage> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: <Widget>[
-                    const Text(
-                      'Wara',
-                      style: TextStyle(
+                    Text(
+                      currentProfile?['first_name'] ?? 'User',
+                      style: const TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
                       ),

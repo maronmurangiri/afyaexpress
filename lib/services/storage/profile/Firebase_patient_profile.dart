@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:afyaexpress/services/auth/auth_exceptions.dart';
 import 'package:afyaexpress/services/auth/auth_service.dart';
 import 'package:afyaexpress/services/auth/auth_user.dart';
@@ -7,6 +9,7 @@ import 'package:afyaexpress/services/storage/profile/patient_profile_constants.d
 import 'package:afyaexpress/services/storage/profile/doctor_profile_exceptions.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 
 class FirebasePatientProfile {
   final AuthUser? user;
@@ -33,13 +36,19 @@ class FirebasePatientProfile {
 
   Future<void> updatePatientProfile({
     required String documentId,
-    List<String>? medicalHistory,
+    String? medicalHistory,
     String? gender,
+    String? email,
+    String? doctorName,
+    String? doctorContact,
     String? phoneNumber,
     int? age,
     List<String>? allergies,
     String? address,
-    String? names,
+    String? firstName,
+    String? lastName,
+    String? profileImage,
+    String? medicalHistoryFile,
     List<String>? currentMedications,
   }) async {
     try {
@@ -53,13 +62,28 @@ class FirebasePatientProfile {
       if (age != null) updates[ageFieldName] = age;
       if (allergies != null) updates[allergiesFieldName] = allergies;
       if (address != null) updates[addressFieldName] = address;
-      if (names != null) updates[patientNameFieldName] = names;
+      if (firstName != null) updates[patientFirstNameFieldName] = firstName;
+      if (lastName != null) updates[patientLastNameFieldName] = lastName;
+      if (email != null) updates[emailFieldName] = email;
+      if (doctorName != null) updates[doctorNameFieldName] = doctorName;
+      if (doctorContact != null) {
+        updates[doctorContactFieldName] = doctorContact;
+      }
       if (currentMedications != null) {
         updates[currentMedicationFieldName] = currentMedications;
       }
+      if (profileImage != null) {
+        updates[profileImageFieldName] = profileImage;
+      }
+      if (medicalHistoryFile != null) {
+        updates[medicalHistoryFileNameFieldName] = medicalHistoryFile;
+      }
 
       await patientProfile.doc(documentId).update(updates);
+      print("document ID");
+      print(documentId);
     } catch (e) {
+      print('Error updating profile: $e');
       throw CouldNotUpdateProfileException();
     }
   }
@@ -78,26 +102,32 @@ class FirebasePatientProfile {
     try {
       final document = await patientProfile.add({
         patientUserIdFieldName: userId,
-        medicalHistoryFieldName: [],
+        medicalHistoryFieldName: '',
         genderFieldName: '',
         phoneNumberFieldName: '',
         ageFieldName: 0,
         allergiesFieldName: [],
         addressFieldName: '',
-        patientNameFieldName: '',
-        currentMedicationFieldName: []
+        patientFirstNameFieldName: '',
+        patientLastNameFieldName: '',
+        currentMedicationFieldName: [],
+        profileImageFieldName: null,
+        medicalHistoryFileNameFieldName: null,
       });
       final fetchedProfile = await document.get();
       return PatientProfile(
         documentId: fetchedProfile.id,
         userId: userId,
-        medicalHistory: [],
+        medicalHistory: '',
         gender: '',
         phoneNumber: '',
         age: 0,
         allergies: [],
         address: '',
-        names: '',
+        firstName: '',
+        lastName: '',
+        profileImage: null,
+        medicalHistoryFile: null,
         currentMedications: [],
       );
     } catch (e) {
@@ -139,6 +169,68 @@ class FirebasePatientProfile {
     } catch (e) {
       print('Error getting patient profile: $e');
       return null;
+    }
+  }
+
+  Future<String?> uploadFile(String filePath, String destinationPath) async {
+    try {
+      // Get a reference to the storage service
+      final Reference storageReference =
+          FirebaseStorage.instance.ref().child(destinationPath);
+
+      // Create a file from the given file path
+      final File file = File(filePath);
+
+      // Upload the file to the storage reference
+      final UploadTask uploadTask = storageReference.putFile(file);
+
+      // Wait for the upload to complete and get the download URL
+      final TaskSnapshot snapshot = await uploadTask;
+      final String downloadUrl = await snapshot.ref.getDownloadURL();
+
+      // Return the download URL
+      return downloadUrl;
+    } catch (e) {
+      // Handle errors (e.g., upload failed)
+      print('Error uploading file: $e');
+      return null;
+    }
+  }
+
+  Future<Map<String, dynamic>?> getPatientById(String userId) async {
+    try {
+      // Step 1: Get the user document by userId
+      final userDocSnapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .get();
+
+      if (!userDocSnapshot.exists) {
+        print('User not found');
+        return null;
+      }
+
+      // Step 2: Get the patient profile from the subcollection
+      final patientProfileQuerySnapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .collection('patientProfile')
+          .get();
+
+      if (patientProfileQuerySnapshot.docs.isEmpty) {
+        print('Patient profile not found');
+        return null;
+      }
+
+      final patientProfileDoc = patientProfileQuerySnapshot.docs.first;
+      Map<String, dynamic> patientData = patientProfileDoc.data();
+      patientData['userId'] = userId; // Adding userId to the patient data
+      print(patientData);
+
+      return patientData;
+    } catch (e) {
+      print('Error fetching patient profile: $e');
+      throw e;
     }
   }
 }

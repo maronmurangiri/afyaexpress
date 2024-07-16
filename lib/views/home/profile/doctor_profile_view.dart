@@ -65,9 +65,9 @@ class _DoctorProfileViewState extends State<DoctorProfileView> {
         _doctorProfile = existingProfile;
         _specializationsController.text = existingProfile.specialization;
         _chargesController.text = existingProfile.charges;
-        _medicIdController.text = existingProfile.medicIdentifier;
-        _addressController.text = existingProfile.address;
-        _idCardController.text = existingProfile.identityCardNo;
+        // _medicIdController.text = existingProfile.medicIdentifier;
+        //_addressController.text = existingProfile.address;
+        //_idCardController.text = existingProfile.identityCardNo;
         _isAvailable = existingProfile.isAvailable;
         _latitude = existingProfile.latitude;
         _longitude = existingProfile.longitude;
@@ -79,9 +79,9 @@ class _DoctorProfileViewState extends State<DoctorProfileView> {
         _doctorProfile = newProfile;
         _specializationsController.text = newProfile.specialization;
         _chargesController.text = newProfile.charges;
-        _medicIdController.text = newProfile.medicIdentifier;
+        _medicIdController.text = newProfile.licenseNumber;
         _addressController.text = newProfile.address;
-        _idCardController.text = newProfile.identityCardNo;
+        _idCardController.text = newProfile.licenseNumber;
         _isAvailable = newProfile.isAvailable;
         _latitude = newProfile.latitude;
         _longitude = newProfile.longitude;
@@ -116,7 +116,7 @@ class _DoctorProfileViewState extends State<DoctorProfileView> {
     final medicId = _medicIdController.text;
     await _doctorService.updateDoctorProfile(
       documentId: doctorProfile.documentId,
-      medicIdentifier: medicId,
+      licenseNumber: medicId,
     );
   }
 
@@ -136,7 +136,7 @@ class _DoctorProfileViewState extends State<DoctorProfileView> {
     final idCard = _idCardController.text;
     await _doctorService.updateDoctorProfile(
       documentId: doctorProfile.documentId,
-      identityCardNo: idCard,
+      //identityCardNo: idCard,
     );
   }
 
