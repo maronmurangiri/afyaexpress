@@ -39,6 +39,8 @@ class _DoctorsAppointmentCardState extends State<DoctorsAppointmentCard> {
             await FirebasePatientProfile().getPatientById(patientId);
 
         final fetchedConditions = await fetchPatientConditions(patientId);
+        print('conditions');
+        print(fetchedConditions);
 
         setState(() {
           appointment = appointmentData;

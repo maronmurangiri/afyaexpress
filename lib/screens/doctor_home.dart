@@ -1,14 +1,19 @@
 import 'package:afyaexpress/enums/menu_actions.dart';
 import 'package:afyaexpress/screens/doctors_appointment_card.dart';
+import 'package:afyaexpress/screens/vitals_doctor.dart';
 import 'package:afyaexpress/services/auth/auth_service.dart';
 import 'package:afyaexpress/services/auth/bloc/auth_bloc.dart';
 import 'package:afyaexpress/services/auth/bloc/auth_event.dart';
+import 'package:afyaexpress/services/storage/appointment/firebase_appointment.dart';
 import 'package:afyaexpress/services/storage/profile/Firebase_doctor_profile.dart';
+import 'package:afyaexpress/services/storage/profile/Firebase_patient_profile.dart';
 import 'package:afyaexpress/services/storage/profile/doctor_profile.dart';
 import 'package:afyaexpress/utilities/dialogs/logout_dialog.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:intl/intl.dart';
 import 'index.dart'; // Assuming this contains your primary color definitions
 import 'package:afyaexpress/screens/appointment.dart';
 import 'package:afyaexpress/screens/appointment_card.dart';
@@ -28,6 +33,11 @@ class _DoctorHomeState extends State<DoctorHome> {
   int _selectedIndex = 0;
   bool _hasNewBooking = true; // Mocking new booking notification
   int _notificationCount = 5; // Mocking notification count
+
+  //
+  Map<String, dynamic>? appointment;
+  Map<String, dynamic>? patient;
+  List<Map<String, dynamic>> conditions = [];
 
   // Dummy data for vitals, replace with actual data from vitals_capture.dart
   Map<String, dynamic>? _latestVitals;
@@ -54,7 +64,7 @@ class _DoctorHomeState extends State<DoctorHome> {
       case 1:
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => const VitalsCapture()),
+          MaterialPageRoute(builder: (context) => const VitalsDoctor()),
         ).then((value) {
           // Assuming value is the vitals data returned from VitalsCapture
           if (value != null) {
@@ -193,6 +203,39 @@ class _DoctorHomeState extends State<DoctorHome> {
     // Implement functionality to add prescription
     print('Add Prescription pressed');
     // Example: Show a dialog to input prescription details
+  }
+
+  Future<void> fetchAppointmentDetails() async {
+    final currentUser = AuthService.firebase().currentUser!;
+    try {
+      final fetchedAppointments = await fetchDoctorAppointments(currentUser.id);
+      print("appointment details");
+      print(fetchedAppointments);
+      if (fetchedAppointments.isNotEmpty) {
+        final appointmentData = fetchedAppointments.first;
+        final patientId = appointmentData['patient_id'];
+        final fetchedPatient =
+            await FirebasePatientProfile().getPatientById(patientId);
+
+        final fetchedConditions = await fetchPatientConditions(patientId);
+
+        setState(() {
+          appointment = appointmentData;
+          patient = fetchedPatient;
+          conditions = fetchedConditions;
+          isLoading = false;
+        });
+      } else {
+        setState(() {
+          isLoading = false;
+        });
+      }
+    } catch (e) {
+      print('Error fetching appointment details: $e');
+      setState(() {
+        isLoading = false;
+      });
+    }
   }
 
   @override
@@ -432,7 +475,59 @@ class _DoctorHomeState extends State<DoctorHome> {
   }
 }
 
-class VitalsCaptureForm extends StatelessWidget {
+class VitalsCaptureForm extends StatefulWidget {
+  @override
+  _VitalsCaptureFormState createState() => _VitalsCaptureFormState();
+}
+
+class _VitalsCaptureFormState extends State<VitalsCaptureForm> {
+  Map<String, dynamic>? appointment;
+  Map<String, dynamic>? patient;
+  List<Map<String, dynamic>> conditions = [];
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchAppointmentDetails();
+  }
+
+  Future<void> fetchAppointmentDetails() async {
+    try {
+      final currentUser = AuthService.firebase().currentUser!;
+      final fetchedAppointments = await fetchDoctorAppointments(currentUser.id);
+      print("appointment details");
+      print(fetchedAppointments);
+
+      if (fetchedAppointments.isNotEmpty) {
+        final appointmentData = fetchedAppointments.first;
+        final patientId = appointmentData['patient_id'];
+        final fetchedPatient =
+            await FirebasePatientProfile().getPatientById(patientId);
+        final fetchedConditions = await fetchPatientConditions(patientId);
+
+        print('conditions');
+        print(fetchedConditions);
+
+        setState(() {
+          appointment = appointmentData;
+          patient = fetchedPatient;
+          conditions = fetchedConditions;
+          isLoading = false;
+        });
+      } else {
+        setState(() {
+          isLoading = false;
+        });
+      }
+    } catch (e) {
+      print('Error fetching appointment details: $e');
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     // Here we will fetch the data entered by the patient from the database
@@ -453,23 +548,65 @@ class VitalsCaptureForm extends StatelessWidget {
     ];
 
     return Column(
-      children: vitalsData.map((vital) {
-        return Card(
-          margin: EdgeInsets.symmetric(vertical: 10),
-          child: ListTile(
-            title: Text('Patient: ${vital['patient']}'),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Blood Pressure: ${vital['bloodPressure']}'),
-                Text('Blood Sugar: ${vital['bloodSugar']}'),
-                Text('Temperature: ${vital['temperature']}'),
-              ],
-            ),
-          ),
-        );
-      }).toList(),
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Display patient's first name or default text if patient is null
+        Text(patient?['first_name'] ?? 'Patient' + ' vitals'),
+
+        // Display conditions based on the fetched data
+        ...conditions.map((entry) {
+          if (entry['type'] == 'bloodPressure') {
+            return Card(
+              margin: EdgeInsets.symmetric(vertical: 10),
+              child: ListTile(
+                title: const Text('Blood Pressure'),
+                subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Systolic: ${entry['systolic']}'),
+                    Text('Diastolic: ${entry['diastolic']}'),
+                    Text(
+                        'Capture time: ${_formatTimestamp(entry['timestamp'])}'),
+                  ],
+                ),
+              ),
+            );
+          } else if (entry['type'] == 'diabetes') {
+            return Card(
+              margin: EdgeInsets.symmetric(vertical: 10),
+              child: ListTile(
+                title: const Text('Diabetes'),
+                subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Random Blood Sugar: ${entry['random_blood_sugar']}'),
+                    Text(
+                        'Fasting Blood Sugar: ${entry['fasting_blood_sugar']}'),
+                    Text(
+                        'Capture time: ${_formatTimestamp(entry['timestamp'])}'),
+                  ],
+                ),
+              ),
+            );
+          } else {
+            return Container(); // Handle other types or edge cases as needed
+          }
+        }).toList(),
+      ],
     );
+  }
+
+  String _formatTimestamp(dynamic timestamp) {
+    try {
+      // Convert Firestore Timestamp to DateTime
+      DateTime dateTime = (timestamp as Timestamp).toDate();
+      // Format DateTime to desired format
+      String formattedDateTime = DateFormat.yMMMd().add_jms().format(dateTime);
+      return formattedDateTime;
+    } catch (e) {
+      print('Error formatting timestamp: $e');
+      return 'Timestamp not available';
+    }
   }
 }
 

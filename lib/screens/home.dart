@@ -3,19 +3,19 @@ import 'package:afyaexpress/global/global.dart';
 import 'package:afyaexpress/screens/appointment.dart';
 import 'package:afyaexpress/screens/appointment_card.dart';
 import 'package:afyaexpress/screens/doctor.dart';
+import 'package:afyaexpress/screens/index.dart';
 import 'package:afyaexpress/screens/profiles/user_profile.dart';
 import 'package:afyaexpress/screens/vitals_capture.dart';
 import 'package:afyaexpress/services/auth/auth_service.dart';
 import 'package:afyaexpress/services/auth/bloc/auth_bloc.dart';
 import 'package:afyaexpress/services/auth/bloc/auth_event.dart';
 import 'package:afyaexpress/services/storage/profile/Firebase_patient_profile.dart';
-import 'package:afyaexpress/services/storage/profile/patient_profile_constants.dart';
+import 'package:afyaexpress/services/storage/profile/Firebase_doctor_profile.dart';
 import 'package:afyaexpress/utilities/dialogs/logout_dialog.dart';
 import 'package:afyaexpress/utils/config.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'index.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -25,14 +25,17 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  late final currentUser; // = AuthService.firebase().currentUser!
-  late FirebasePatientProfile currentPatient; // = FirebasePatientProfile();
+  late final currentUser;
+  late FirebasePatientProfile currentPatient;
   Map<String, dynamic>? currentProfile;
   bool isLoading = true;
+  List<Map<String, dynamic>> doctors = [];
+
   @override
   void initState() {
     super.initState();
     _initializeUser();
+    _fetchDoctors();
   }
 
   Future<void> _initializeUser() async {
@@ -44,6 +47,19 @@ class _HomePageState extends State<HomePage> {
     setState(() {
       isLoading = false;
     });
+  }
+
+  Future<void> _fetchDoctors() async {
+    try {
+      FirebaseDoctorProfile firebaseDoctorProfile = FirebaseDoctorProfile();
+      List<Map<String, dynamic>> fetchedDoctors =
+          await firebaseDoctorProfile.fetchDoctors();
+      setState(() {
+        doctors = fetchedDoctors;
+      });
+    } catch (e) {
+      print('Error fetching doctors: $e');
+    }
   }
 
   final List<Map<String, dynamic>> medCat = const [
@@ -82,16 +98,13 @@ class _HomePageState extends State<HomePage> {
           MaterialPageRoute(builder: (context) => const VitalsCapture()),
         );
         break;
-        break;
       case 2:
-        // Navigate to Profile page
         Navigator.push(
           context,
           MaterialPageRoute(builder: (context) => const Appointment()),
         );
         break;
       case 3:
-        // Navigate to Vitals Capture page
         Navigator.push(
           context,
           MaterialPageRoute(builder: (context) => const UserProfile()),
@@ -110,12 +123,6 @@ class _HomePageState extends State<HomePage> {
       appBar: AppBar(
         title: const Text('AfyaExpress'),
         actions: [
-          /*IconButton(
-            onPressed: () {
-              //Navigator.of(context).pushNamed(createRoute);
-            },
-            //icon: const Icon(Icons.add),
-          ),*/
           PopupMenuButton<MenuAction>(
             onSelected: (value) async {
               switch (value) {
@@ -154,7 +161,7 @@ class _HomePageState extends State<HomePage> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: <Widget>[
                     Text(
-                      'Hi ' + currentProfile?['first_name'] ?? 'User',
+                      'Hi ${currentProfile?['first_name'] ?? 'User'}',
                       style: const TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
@@ -238,9 +245,13 @@ class _HomePageState extends State<HomePage> {
                 ),
                 Config.spaceSmall,
                 Column(
-                  children: List.generate(10, (index) {
-                    return const DoctorCard();
-                  }),
+                  children: doctors.map((doctor) {
+                    return DoctorCard(
+                      doctorName: doctor['name'] ?? 'Unknown Doctor',
+                      specialization:
+                          doctor['specialization'] ?? 'Unknown Specialization',
+                    );
+                  }).toList(),
                 ),
               ],
             ),
